@@ -1,0 +1,14 @@
+Snoop Loggy Log
+
+Copyright 2017 MediaMath
+
+3rd Party Dependencies:
+
+  jeromq
+    Mozilla Public License Version 2.0
+    https://github.com/zeromq/jeromq
+  logback
+    Lesser General Public License version 2.1
+    https://logback.qos.ch
+
+
