@@ -1,7 +1,4 @@
 # Snoop "Loggy" Log
-
-👀 Snoop Log lets you tail your cluster without the need for log aggregation 👀
-
 ![log message flow](./ClusterTail.png)
 
 Perhaps more concept than engineering, Snoop "Loggy" Log is an asynchronous Logback appender that fans in scoped messages to a proxied ZeroMQ PUB endpoint. The use case for Snoop Loggy Log is to tail all logs of a "live forever" application, like Flink or Spark Streaming, without the need for continuous log aggregation. Snoop "Loggy" Log is so-named because it uses logging semantics; it's loggy but not really a log, more a log publisher. 
