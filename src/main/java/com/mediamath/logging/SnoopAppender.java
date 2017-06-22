@@ -65,11 +65,11 @@ public class SnoopAppender extends UnsynchronizedAppenderBase<ILoggingEvent> {
 	public void start() {
 		if (endpoint == null) {
 			endpoint = findEndpoint();
-		}
-		if (endpoint == null) {
-			addStatus(new ErrorStatus(
-					"Endpoint was neither set nor found in classpath core-site.xml.",this));
-			return;
+			if (endpoint == null) {
+				addStatus(new ErrorStatus(
+						"Endpoint was neither set nor found in classpath core-site.xml.",this));
+				return;
+			}
 		}
 		context  = new ZContext(1);
 		context.setLinger(1000);
