@@ -1,7 +1,7 @@
 # Snoop "Loggy" Log
 ![log message flow](./ClusterTail.png)
 
-Perhaps more concept than engineering, Snoop "Loggy" Log is an asynchronous Logback appender that fans in scoped messages to a proxied ZeroMQ PUB endpoint. The use case for Snoop Loggy Log is to tail all logs of a "live forever" application, like Flink or Spark Streaming, without the need for continuous log aggregation. Snoop "Loggy" Log is so-named because it uses logging semantics; it's loggy but not really a log, more a log publisher. 
+Snoop "Loggy" Log is an asynchronous Logback appender that fans in scoped messages to a proxied ZeroMQ PUB endpoint. The use case for Snoop Loggy Log is to tail all logs of a "live forever" application, like Flink or Spark Streaming, without the need for continuous log aggregation. Snoop "Loggy" Log is so-named because it uses logging semantics; it's loggy but not really a log, more a log publisher. 
  
 Like any proper logging tool, Snoop Log is both minimal in dependencies and unobtrusive at runtime. It's fully asynchronous, will drop messages if the Snoop Proxy is not reachable, and reconnect when it is. It uses native java JeroMQ, so will work with any JVM-based code without need for native zmq libraries.
 
