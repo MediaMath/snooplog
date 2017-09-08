@@ -10,7 +10,6 @@ Like any proper logging tool, Snoop Log is both minimal in dependencies and unob
 
 ## Install 
 ```
-cd logback-snoop 
 mvn clean install
 ```
 ## Usage
