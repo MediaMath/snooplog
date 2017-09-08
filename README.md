@@ -1,12 +1,12 @@
 # Snoop "Loggy" Log
 
-👀 Snoop Log lets you tail your cluster without the need for log aggregation 👀
+Snoop Log lets you tail your cluster without the need for log aggregation
 
 ![log message flow](./ClusterTail.png)
 
-Perhaps more concept than engineering, Snoop "Loggy" Log is an asynchronous Logback appender that fans in scoped messages to a proxied ZeroMQ PUB endpoint. The use case for Snoop Loggy Log is to tail all logs of a "live forever" application, like Flink or Spark Streaming, without the need for continuous log aggregation. Snoop "Loggy" Log is so-named because it uses logging semantics; it's loggy but not really a log, more a log publisher. 
+Snoop Log is a Logback or Log4j appender that fans in scoped messages to a proxied ZeroMQ PUB endpoint. The use case for Snoop Loggy Log is to tail all logs of a "live forever" application, like Flink or Spark Streaming, without the need for continuous log aggregation. Snoop "Loggy" Log is so-named because it uses logging semantics; it's loggy but not really a log, more a log publisher. 
  
-Like any proper logging tool, Snoop Log is both minimal in dependencies and unobtrusive at runtime. It's fully asynchronous, will drop messages if the Snoop Proxy is not reachable, and reconnect when it is. It uses native java JeroMQ, so will work with any JVM-based code without need for native zmq libraries.
+Like any proper logging tool, Snoop Log is both minimal in dependencies and unobtrusive at runtime. It's fully asynchronous (note Log4j appender will need do be configured [async] (./src/test/resources/log4j.xml)), will drop messages if the Snoop Proxy is not reachable, and reconnect when it is. It uses native java JeroMQ, so will work with any JVM-based code without need for native zmq libraries.
 
 ## Install 
 ```
@@ -55,4 +55,4 @@ You can now repeat the above tests mixing and matching golang and java clients a
 ## Notes
 * If hadoop core-site.xml exists in classpath, SnoopAppender will check it for "snoop.proxy.endpoint" hostport (using a simple parse to avoid hadoop dependency).. Hostport can also be set in logback.xml. For other means of dynamic discovery, override `SnoopAppender.findEndpoint`.
 
-* SnoopAppender is coded for Logback simply because that is what we are using at work. It would be a trivial effort to rework it for log4j or any other appender-based java logging framework.
+* Logback appender has been thoroughly tested. Log4j should work as well but it should perhaps be considered beta.  

@@ -15,7 +15,7 @@
 *
 * @author cresnick
 */
-package com.mediamath.logging;
+package com.mediamath.logging.logback;
 
 import ch.qos.logback.classic.LoggerContext;
 import org.slf4j.ILoggerFactory;
