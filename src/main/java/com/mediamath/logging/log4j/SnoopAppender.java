@@ -18,9 +18,7 @@
 
 package com.mediamath.logging.log4j;
 
-import org.apache.log4j.Appender;
 import org.apache.log4j.AppenderSkeleton;
-import org.apache.log4j.AsyncAppender;
 import org.apache.log4j.Layout;
 import org.apache.log4j.spi.LoggingEvent;
 import org.zeromq.ZContext;
@@ -131,6 +129,9 @@ public class SnoopAppender extends AppenderSkeleton {
 	protected synchronized void append(LoggingEvent event) {
 		ZMQ.Socket s = socketThreadLocal.get();
 		if (s == null) {
+			if (context == null) {
+				activateOptions();
+			}
 			s = context.createSocket(ZMQ.PUSH);
 			s.connect(inprocEndpoint);
 			socketThreadLocal.set(s);
@@ -159,7 +160,7 @@ public class SnoopAppender extends AppenderSkeleton {
 			Scanner s = new Scanner(in).useDelimiter("\\A");
 			String coreSite = s.hasNext() ? s.next() : "";
 
-			int pos = coreSite.indexOf("snoop.proxy.endpoint");
+			int pos = coreSite.indexOf("snoop.endpoint");
 			if (pos > 0) {
 				pos = coreSite.indexOf("value>", pos) + 6;
 				return coreSite.substring(pos, coreSite.indexOf("<", pos)).trim();

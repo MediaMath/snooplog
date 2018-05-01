@@ -23,7 +23,7 @@
   </property>
 
   <property>
-      <name>snoop.proxy.endpoint</name>
+      <name>snoop.endpoint</name>
       <value>localhost:5556</value>
   </property>
 </configuration>
