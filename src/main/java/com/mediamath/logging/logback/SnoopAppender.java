@@ -22,26 +22,18 @@ import ch.qos.logback.classic.spi.ILoggingEvent;
 import ch.qos.logback.core.Layout;
 import ch.qos.logback.core.UnsynchronizedAppenderBase;
 import ch.qos.logback.core.status.ErrorStatus;
-import org.zeromq.ZContext;
-import org.zeromq.ZMQ;
+import com.mediamath.logging.zmq.AsyncPublisher;
 
 import java.io.InputStream;
 import java.util.Scanner;
 
 
-/**
- * Utility to support pub sub messaging across a cluster. PUB tcp socket connects to known endpoint. Because
- * zmq sockets are not threadsafe all messages are sent using threadLocal PUSH socket connecting to inproc
- * (zmq inter-thread) PULL socket forwarding to the PUB socket.
- *
- * Created by cresnick on 1/13/17.
- */
+
 public class SnoopAppender extends UnsynchronizedAppenderBase<ILoggingEvent> {
 
 	private String endpoint;
-	private String inprocEndpoint = "inproc://message-pipe";
-	private ZContext context;
-	private static ThreadLocal<ZMQ.Socket> socketThreadLocal = new ThreadLocal<ZMQ.Socket>();
+
+	private AsyncPublisher publisher;
 
 	private Layout<ILoggingEvent> layout;
 
@@ -69,59 +61,21 @@ public class SnoopAppender extends UnsynchronizedAppenderBase<ILoggingEvent> {
 				addStatus(new ErrorStatus(
 						"Endpoint was neither set nor found in classpath core-site.xml.",this));
 				return;
+			} else {
+				publisher = new AsyncPublisher(endpoint);
 			}
 		}
-		context  = new ZContext(1);
-		context.setLinger(1000);
-		String addr = "tcp://" + endpoint;
-		final ZMQ.Socket remote = context.createSocket(ZMQ.PUB);
-		remote.connect(addr);
-		//give PUB-SUB a few milliseconds to establish.
-		try {
-			Thread.sleep(100);
-		} catch (InterruptedException e) {
-			e.printStackTrace();
-		}
-		final ZMQ.Socket local = context.createSocket(ZMQ.PULL);
-		local.bind(inprocEndpoint);
-		Thread t = new Thread(new Runnable() {
-			public void run() {
-				ZMQ.proxy(local, remote, null);
-			}
-		});
-		t.start();
-		//set threadlocal directly to PUB in case we are logging from this thread
-		socketThreadLocal.set(remote);
-		Runtime.getRuntime().addShutdownHook(new Thread() {
-			@Override
-			public void run() {
-				if (context != null) {
-					context.destroy();
-				}
-			}
-		});
 		super.start();
 	}
 
 	@Override
 	public void stop() {
-		context.close();
+		publisher.close();
 		super.stop();
 	}
 
 	protected void append(ILoggingEvent eventObject) {
-		ZMQ.Socket s = socketThreadLocal.get();
-		if (s == null) {
-			s = context.createSocket(ZMQ.PUSH);
-			s.connect(inprocEndpoint);
-			socketThreadLocal.set(s);
-		}
-		try {
-			s.send(format(eventObject).trim());
-		} catch (Throwable e) {
-			//drop message
-			socketThreadLocal.set(null);
-		}
+		publisher.publish(format(eventObject).trim());
 	}
 
 	private String format(ILoggingEvent eventObject) {

@@ -18,11 +18,10 @@
 
 package com.mediamath.logging.log4j;
 
+import com.mediamath.logging.zmq.AsyncPublisher;
 import org.apache.log4j.AppenderSkeleton;
 import org.apache.log4j.Layout;
 import org.apache.log4j.spi.LoggingEvent;
-import org.zeromq.ZContext;
-import org.zeromq.ZMQ;
 
 import java.io.InputStream;
 import java.net.InetAddress;
@@ -40,9 +39,7 @@ public class SnoopAppender extends AppenderSkeleton {
 
 
 	private String endpoint;
-	private String inprocEndpoint = "inproc://message-pipe";
-	private ZContext context;
-	private static ThreadLocal<ZMQ.Socket> socketThreadLocal = new ThreadLocal<ZMQ.Socket>();
+	private AsyncPublisher publisher;
 
 	private Layout layout;
 
@@ -88,60 +85,22 @@ public class SnoopAppender extends AppenderSkeleton {
 					"Endpoint was neither set nor found in classpath core-site.xml.");
 			return;
 		}
-		context  = new ZContext(1);
-		context.setLinger(1000);
-		String addr = "tcp://" + endpoint;
-		final ZMQ.Socket remote = context.createSocket(ZMQ.PUB);
-		remote.connect(addr);
-		//give PUB-SUB a few milliseconds to establish.
-		try {
-			Thread.sleep(100);
-		} catch (InterruptedException e) {
-			e.printStackTrace();
-		}
-		final ZMQ.Socket local = context.createSocket(ZMQ.PULL);
-		local.bind(inprocEndpoint);
-		Thread t = new Thread(new Runnable() {
-			public void run() {
-				ZMQ.proxy(local, remote, null);
-			}
-		});
-		t.start();
-		//set threadlocal directly to PUB in case we are logging from this thread
-		socketThreadLocal.set(remote);
-		Runtime.getRuntime().addShutdownHook(new Thread() {
-			@Override
-			public void run() {
-				if (context != null) {
-					context.destroy();
-				}
-			}
-		});
+		publisher = new AsyncPublisher(endpoint);
+
 	}
 
 
 	synchronized public void close() {
-		context.close();
+		publisher.close();
 	}
 
 
 	@Override
 	protected synchronized void append(LoggingEvent event) {
-		ZMQ.Socket s = socketThreadLocal.get();
-		if (s == null) {
-			if (context == null) {
+			if (publisher == null) {
 				activateOptions();
 			}
-			s = context.createSocket(ZMQ.PUSH);
-			s.connect(inprocEndpoint);
-			socketThreadLocal.set(s);
-		}
-		try {
-			s.send(format(event).trim());
-		} catch (Throwable e) {
-			//drop message
-			socketThreadLocal.set(null);
-		}
+			publisher.publish(format(event).trim());
 	}
 
 
