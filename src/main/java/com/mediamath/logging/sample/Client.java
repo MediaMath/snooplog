@@ -18,6 +18,7 @@
 
 package com.mediamath.logging.sample;
 
+import org.zeromq.SocketType;
 import org.zeromq.ZContext;
 import org.zeromq.ZMQ;
 
@@ -27,19 +28,15 @@ import org.zeromq.ZMQ;
  * or backend service (e.g. REST) for general access.
  */
 public class Client {
-
-    public static void main(String[] args) throws InterruptedException {
-
+    public static void main(String[] args) {
         final ZContext context = new ZContext(1);
 
-        ZMQ.Socket sub = context.createSocket(ZMQ.SUB);
+        ZMQ.Socket sub = context.createSocket(SocketType.SUB);
         sub.connect("tcp://localhost:5557");
 
         sub.subscribe("".getBytes());
-        while(true){
+        while(true) {
             System.out.println(new String(sub.recv()));
         }
-
     }
-
 }

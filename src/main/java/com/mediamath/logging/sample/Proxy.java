@@ -17,6 +17,7 @@
 */
 package com.mediamath.logging.sample;
 
+import org.zeromq.SocketType;
 import org.zeromq.ZContext;
 import org.zeromq.ZMQ;
 
@@ -32,15 +33,15 @@ public class Proxy {
 		ZContext context = new ZContext(1);
 
 		//  This is where the weather server sits
-		ZMQ.Socket frontend =  context.createSocket(ZMQ.XSUB);
+		ZMQ.Socket frontend =  context.createSocket(SocketType.XSUB);
 		frontend.bind("tcp://*:5556");
 
 		//  This is our public endpoint for subscribers
-		ZMQ.Socket backend  = context.createSocket(ZMQ.XPUB);
+		ZMQ.Socket backend  = context.createSocket(SocketType.XPUB);
 		backend.bind("tcp://*:5557");
 
 		//  Run the proxy forever
-		ZMQ.proxy (frontend, backend, null);
+		ZMQ.proxy(frontend, backend, null);
 
 		//  Never reached, adding it anyway.
 		context.close();
