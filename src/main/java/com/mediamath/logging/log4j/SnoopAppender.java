@@ -19,49 +19,37 @@
 package com.mediamath.logging.log4j;
 
 import com.mediamath.logging.zmq.AsyncPublisher;
-import org.apache.log4j.AppenderSkeleton;
-import org.apache.log4j.Layout;
-import org.apache.log4j.spi.LoggingEvent;
+import org.apache.logging.log4j.core.Filter;
+import org.apache.logging.log4j.core.Layout;
+import org.apache.logging.log4j.core.LogEvent;
+import org.apache.logging.log4j.core.appender.AbstractAppender;
+import org.apache.logging.log4j.core.config.Property;
+import org.apache.logging.log4j.core.config.plugins.Plugin;
+import org.apache.logging.log4j.core.config.plugins.PluginAttribute;
+import org.apache.logging.log4j.core.config.plugins.PluginElement;
+import org.apache.logging.log4j.core.config.plugins.PluginFactory;
+import org.apache.logging.log4j.core.layout.PatternLayout;
 
 import java.io.InputStream;
+import java.io.Serializable;
+
 import java.net.InetAddress;
 import java.net.UnknownHostException;
 import java.util.Scanner;
 
 
-/**
- * Log4j 1.x version of Logback appender. Unlike logback, log4j does not suuport first-class async appenders, so
- * this should be configured as wrapped in a {@link org.apache.log4j.AsyncAppender} (see test example).
- *
- * Created by cresnick on 1/13/17.
- */
-public class SnoopAppender extends AppenderSkeleton {
-
-
+@Plugin(name = "SnoopAppender", category = "Core", elementType = "appender", printObject = true)
+public class SnoopAppender extends AbstractAppender {
 	private String endpoint;
 	private AsyncPublisher publisher;
-
-	private Layout layout;
-
-
-	@Override
-	public Layout getLayout() {
-		return layout;
-	}
-
+	
 	public boolean requiresLayout() {
 		return false;
 	}
-
-	@Override
-	public void setLayout(Layout layout) {
-		this.layout = layout;
-	}
-
+	
 	public void setEndpoint(String endpoint) {
 		this.endpoint = endpoint;
 	}
-
 	public String getEndpoint() {
 		return endpoint;
 	}
@@ -73,39 +61,27 @@ public class SnoopAppender extends AppenderSkeleton {
 			e.printStackTrace();
 		}
 	}
-
-	@Override
+	
 	public void activateOptions() {
-
 		if (endpoint == null) {
 			endpoint = findEndpoint();
 		}
 		if (endpoint == null) {
-			errorHandler.error(
-					"Endpoint was neither set nor found in classpath core-site.xml.");
+			error("Endpoint was neither set nor found in classpath core-site.xml.");
 			return;
 		}
 		publisher = new AsyncPublisher(endpoint);
-
 	}
-
-
+	
 	synchronized public void close() {
 		publisher.close();
 	}
 
 
-	@Override
-	protected synchronized void append(LoggingEvent event) {
-			if (publisher == null) {
-				activateOptions();
-			}
-			publisher.publish(format(event).trim());
-	}
-
-
-	private String format(LoggingEvent eventObject) {
-		return layout == null ? eventObject.getMessage().toString() : layout.format(eventObject);
+	private String format(LogEvent eventObject) {
+		return getLayout() == null 
+				? eventObject.getMessage().toString() 
+				: toSerializable(eventObject).toString();
 	}
 
 	/**
@@ -126,5 +102,33 @@ public class SnoopAppender extends AppenderSkeleton {
 			}
 		}
 		return null;
+	}
+
+	public SnoopAppender(final String name, final Filter filter, final Layout<? extends Serializable> layout, 
+						 boolean ignoreExceptions, Property[] properties) {
+		super(name, filter, layout, ignoreExceptions, properties);
+	}
+
+	@PluginFactory
+	public static SnoopAppender createAppender(@PluginAttribute("name") String name,
+											   @PluginAttribute("ignoreExceptions") boolean ignoreExceptions,
+											   @PluginAttribute("endpoint") String endpoint,
+											   @PluginElement("Layout") Layout layout,
+											   @PluginElement("Filters") Filter filter) {
+		if (layout == null) {
+			layout = PatternLayout.createDefaultLayout();
+		}
+
+		SnoopAppender appender = new SnoopAppender(name, filter, layout, ignoreExceptions, null);
+		appender.setEndpoint(endpoint);
+		return appender;
+	}
+
+	@Override
+	public void append(final LogEvent event) {
+		if (publisher == null) {
+			activateOptions();
+		}
+		publisher.publish(format(event).trim());
 	}
 }
